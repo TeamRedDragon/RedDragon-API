@@ -6,7 +6,7 @@ The common API toolkit for all RedDragon mods.
 
 **You don't need to download or install this API. It will be automatically shipped with any release of our mods.**
 
-If you're a mod developer, you are allowed and encouraged to use this API though. It provides some low-level features we abstracted away from out content-focussed mods during development. That includes:
+If you're a mod developer, you are allowed and encouraged to use this API. It provides some low-level features we abstracted away from out content-focussed mods during development. That includes:
 * Easily adding new blocks, items and fluids
 * Utils methods for easy fluid setup
 * Framework for self-drying fluid blocks
