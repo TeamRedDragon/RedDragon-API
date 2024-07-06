@@ -1,6 +1,7 @@
 package reddragon.api.configs;
 
 import net.minecraft.item.ItemGroup;
+import net.minecraft.registry.RegistryKey;
 
 /**
  * Interface for an enumeration of all blocks that are added to the game by the
@@ -19,7 +20,7 @@ public interface RegisterableBlock {
 	/**
 	 * Requests the item group this block should be added to.
 	 */
-	ItemGroup getItemGroup();
+    RegistryKey<ItemGroup> getItemGroup();
 
 	/**
 	 * Requests the identifier namespace of this block. This is usually the mod ID.

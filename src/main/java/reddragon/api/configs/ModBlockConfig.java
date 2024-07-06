@@ -2,13 +2,16 @@ package reddragon.api.configs;
 
 import java.util.Locale;
 
+import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
 import net.minecraft.block.AbstractBlock;
 import net.minecraft.block.Block;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemGroup;
+import net.minecraft.registry.Registries;
+import net.minecraft.registry.Registry;
+import net.minecraft.registry.RegistryKey;
 import net.minecraft.util.Identifier;
-import net.minecraft.util.registry.Registry;
 import reddragon.api.content.BlockHolder;
 
 public class ModBlockConfig implements BlockHolder {
@@ -23,11 +26,14 @@ public class ModBlockConfig implements BlockHolder {
 		this(new Block(settings));
 	}
 
-	public void register(final String namespace, final ItemGroup itemGroup, final String name) {
-		final Identifier identifier = new Identifier(namespace, name.toLowerCase(Locale.ROOT));
+    public void register(String namespace, RegistryKey<ItemGroup> itemGroup, String name) {
+        var identifier = new Identifier(namespace, name.toLowerCase(Locale.ROOT));
+        var blockItem = new BlockItem(block, new Item.Settings());
 
-		Registry.register(Registry.BLOCK, identifier, block);
-		Registry.register(Registry.ITEM, identifier, new BlockItem(block, new Item.Settings().group(itemGroup)));
+        Registry.register(Registries.BLOCK, identifier, block);
+        Registry.register(Registries.ITEM, identifier, blockItem);
+
+        ItemGroupEvents.modifyEntriesEvent(itemGroup).register(entries -> entries.add(blockItem));
 	}
 
 	@Override

@@ -6,21 +6,17 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.Supplier;
 
-import net.fabricmc.fabric.api.client.render.fluid.v1.FluidRenderHandler;
-import net.fabricmc.fabric.api.object.builder.v1.block.FabricBlockSettings;
 import net.minecraft.block.AbstractBlock.Settings;
 import net.minecraft.block.Block;
 import net.minecraft.block.Blocks;
 import net.minecraft.fluid.FlowableFluid;
-import net.minecraft.fluid.FluidState;
 import net.minecraft.item.BucketItem;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemGroup;
 import net.minecraft.item.Items;
+import net.minecraft.registry.Registries;
+import net.minecraft.registry.Registry;
 import net.minecraft.util.Identifier;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.registry.Registry;
-import net.minecraft.world.BlockRenderView;
 import reddragon.api.content.BlockHolder;
 import reddragon.api.content.fluids.AbstractFluid;
 import reddragon.api.content.fluids.DryingFluidBlock;
@@ -55,8 +51,6 @@ public final class ModFluidConfig implements BlockHolder {
 	 * final appearance.
 	 * <p>
 	 * Defaults to white (0xFFFFFF) if unspecified.
-	 *
-	 * @see {@link FluidRenderHandler#getFluidColor(BlockRenderView, BlockPos, FluidState)}.
 	 */
 	public ModFluidConfig color(final int tintColor) {
 		this.tintColor = tintColor;
@@ -148,7 +142,7 @@ public final class ModFluidConfig implements BlockHolder {
 				levelDecreasePerBlock,
 				flowSpeed);
 
-		final Settings blockSettings = FabricBlockSettings.copy(Blocks.WATER);
+		final var blockSettings = Settings.copy(Blocks.WATER);
 		if (ticksRandomly) {
 			blockSettings.ticksRandomly();
 		}
@@ -159,17 +153,17 @@ public final class ModFluidConfig implements BlockHolder {
 			fluidBlock.addDriedResult(chance.getKey(), chance.getValue());
 		}
 
-		bucketItem = new BucketItem(stillFluid, new Item.Settings().group(itemGroup).recipeRemainder(Items.BUCKET).maxCount(1));
+        bucketItem = new BucketItem(stillFluid, new Item.Settings().recipeRemainder(Items.BUCKET).maxCount(1));
 
 		// Begin registering all data.
 
-		final Identifier identifier = new Identifier(namespace, name.toLowerCase(Locale.ROOT));
+		final var identifier = new Identifier(namespace, name.toLowerCase(Locale.ROOT));
 
-		Registry.register(Registry.FLUID, identifier, stillFluid);
-		Registry.register(Registry.FLUID, new Identifier(namespace, identifier.getPath() + "_flowing"), flowingFluid);
+        Registry.register(Registries.FLUID, identifier, stillFluid);
+        Registry.register(Registries.FLUID, new Identifier(namespace, identifier.getPath() + "_flowing"), flowingFluid);
 
-		Registry.register(Registry.BLOCK, identifier, fluidBlock);
-		Registry.register(Registry.ITEM,
+        Registry.register(Registries.BLOCK, identifier, fluidBlock);
+        Registry.register(Registries.ITEM,
 				new Identifier(namespace, identifier.getPath() + "_bucket"), bucketItem);
 
 		EnvironmentUtils.clientOnly(() -> () -> {

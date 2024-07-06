@@ -6,8 +6,4 @@ public interface RegisterableItem {
 	String getNamespace();
 
 	ModItemConfig getConfig();
-
-	default void register() {
-		getConfig().register(getNamespace(), name());
-	}
 }

@@ -2,8 +2,9 @@ package reddragon.api.random;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 import java.util.function.Supplier;
+
+import net.minecraft.util.math.random.Random;
 
 /**
  * Helper class to pick a single value from a list of possibilities. Those are
@@ -16,7 +17,6 @@ public class RandomPicker<T> {
 		public Supplier<T> value;
 
 		public Entry(final double probability, final Supplier<T> value) {
-			super();
 			this.probability = probability;
 			this.value = value;
 		}
@@ -38,17 +38,10 @@ public class RandomPicker<T> {
 	/**
 	 * Returns a randomly selected value from all provided possibilities.
 	 */
-	public T pick() {
-		return pick(new Random());
-	}
-
-	/**
-	 * Returns a randomly selected value from all provided possibilities.
-	 */
 	public T pick(final Random random) {
-		final double randomValue = random.nextDouble() * getProbabilitySum();
+		final var randomValue = random.nextDouble() * getProbabilitySum();
 
-		double i = 0;
+		var i = 0D;
 
 		for (final Entry entry : entries) {
 			i += entry.probability;

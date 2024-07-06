@@ -5,7 +5,6 @@ import java.util.function.Supplier;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.FluidBlock;
-import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.fluid.FlowableFluid;
 import net.minecraft.fluid.Fluid;
 import net.minecraft.fluid.FluidState;
@@ -15,6 +14,7 @@ import net.minecraft.state.StateManager;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.world.BlockView;
+import net.minecraft.world.World;
 import net.minecraft.world.WorldAccess;
 import net.minecraft.world.WorldView;
 import reddragon.api.RedDragonApiMod;
@@ -56,19 +56,19 @@ public abstract class AbstractFluid extends FlowableFluid {
 	}
 
 	@Override
-	protected boolean isInfinite() {
+    protected boolean isInfinite(World world) {
 		return false;
 	}
 
-	/**
-	 * Perform actions when fluid flows into a replaceable block. Water drops the
-	 * block's loot table. Lava plays the "block.lava.extinguish" sound.
-	 */
-	@Override
-	protected void beforeBreakingBlock(final WorldAccess world, final BlockPos pos, final BlockState state) {
-		final BlockEntity blockEntity = state.getBlock().hasBlockEntity() ? world.getBlockEntity(pos) : null;
-		Block.dropStacks(state, world, pos, blockEntity);
-	}
+    /**
+     * Perform actions when the fluid flows into a replaceable block. Water drops
+     * the block's loot table. Lava plays the "block.lava.extinguish" sound.
+     */
+    @Override
+    protected void beforeBreakingBlock(WorldAccess world, BlockPos pos, BlockState state) {
+        final var blockEntity = state.hasBlockEntity() ? world.getBlockEntity(pos) : null;
+        Block.dropStacks(state, world, pos, blockEntity);
+    }
 
 	@Override
 	protected int getFlowSpeed(final WorldView world) {
@@ -91,21 +91,19 @@ public abstract class AbstractFluid extends FlowableFluid {
 			return false;
 		}
 
-		final BlockPos sourcePosition = pos.offset(direction.getOpposite());
-		final BlockPos targetPosition = pos;
+		final var sourcePosition = pos.offset(direction.getOpposite());
+		final var targetPosition = pos;
 
-		final FluidState sourceState = world.getFluidState(sourcePosition);
-		final FluidState targetState = world.getFluidState(targetPosition);
+		final var sourceState = world.getFluidState(sourcePosition);
+		final var targetState = world.getFluidState(targetPosition);
 
 		final int assumedNewBlockLevel;
 
-		if (sourceState.getFluid() instanceof FlowableFluidAccessor && world instanceof WorldView) {
-			final FlowableFluidAccessor sourceFluid = (FlowableFluidAccessor) sourceState.getFluid();
-
+        if (sourceState.getFluid() instanceof FlowableFluidAccessor sourceFluid && world instanceof WorldView worldView) {
 			if (direction.getAxis().isVertical()) {
 				assumedNewBlockLevel = 8;
 			} else {
-				assumedNewBlockLevel = sourceState.getLevel() - sourceFluid.callGetLevelDecreasePerBlock((WorldView) world);
+                assumedNewBlockLevel = sourceState.getLevel() - sourceFluid.callGetLevelDecreasePerBlock(worldView);
 			}
 		} else {
 			RedDragonApiMod.LOG.error("Assuming decrease of 1");
@@ -128,15 +126,10 @@ public abstract class AbstractFluid extends FlowableFluid {
 		return 100;
 	}
 
-	@Override
-	protected BlockState toBlockState(final FluidState fluidState) {
-		return fluidBlockSupplier.get().getDefaultState().with(FluidBlock.LEVEL, method_15741(fluidState));
-	}
-
-	@Override
-	public int getLevel(final FluidState fluidState) {
-		return isStill(fluidState) ? 8 : fluidState.get(LEVEL);
-	}
+    @Override
+    protected BlockState toBlockState(final FluidState fluidState) {
+        return fluidBlockSupplier.get().getDefaultState().with(FluidBlock.LEVEL, getBlockStateLevel(fluidState));
+    }
 
 	@Override
 	public boolean matchesType(final Fluid fluid) {
@@ -158,6 +151,11 @@ public abstract class AbstractFluid extends FlowableFluid {
 		public boolean isStill(final FluidState fluidState) {
 			return true;
 		}
+
+        @Override
+        public int getLevel(FluidState fluidState) {
+            return 8;
+        }
 	}
 
 	public static class Flowing extends AbstractFluid {
@@ -176,5 +174,10 @@ public abstract class AbstractFluid extends FlowableFluid {
 		public boolean isStill(final FluidState fluidState) {
 			return false;
 		}
+
+        @Override
+        public int getLevel(FluidState fluidState) {
+            return fluidState.get(LEVEL);
+        }
 	}
 }

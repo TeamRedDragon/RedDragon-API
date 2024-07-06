@@ -1,71 +1,67 @@
 package reddragon.api.utils;
 
-import java.util.function.Function;
+import java.util.Collection;
+import java.util.List;
 
 import net.fabricmc.fabric.api.blockrenderlayer.v1.BlockRenderLayerMap;
 import net.fabricmc.fabric.api.client.render.fluid.v1.FluidRenderHandler;
 import net.fabricmc.fabric.api.client.render.fluid.v1.FluidRenderHandlerRegistry;
-import net.fabricmc.fabric.api.event.client.ClientSpriteRegistryCallback;
 import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
+import net.fabricmc.fabric.api.resource.ResourceReloadListenerKeys;
 import net.fabricmc.fabric.api.resource.SimpleSynchronousResourceReloadListener;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.RenderLayer;
 import net.minecraft.client.texture.Sprite;
-import net.minecraft.client.texture.SpriteAtlasTexture;
 import net.minecraft.fluid.Fluid;
 import net.minecraft.fluid.FluidState;
+import net.minecraft.registry.Registries;
 import net.minecraft.resource.ResourceManager;
 import net.minecraft.resource.ResourceType;
+import net.minecraft.screen.PlayerScreenHandler;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.registry.Registry;
 import net.minecraft.world.BlockRenderView;
 
 public class FluidUtils {
 
-	public static void setupFluidRendering(final Fluid stillFluid, final Fluid flowingFluid, final Identifier fluidIdentifier,
-			final int color) {
+    public static void setupFluidRendering(final Fluid stillFluid,
+                                              final Fluid flowingFluid,
+                                              final Identifier fluidIdentifier,
+                                              final int color) {
 
-		final Identifier stillSpriteId = new Identifier(fluidIdentifier.getNamespace(),
+		final var stillSpriteId = new Identifier(fluidIdentifier.getNamespace(),
 				"block/fluids/" + fluidIdentifier.getPath());
 
-		final Identifier flowingSpriteId = new Identifier(fluidIdentifier.getNamespace(),
+		final var flowingSpriteId = new Identifier(fluidIdentifier.getNamespace(),
 				"block/fluids/" + fluidIdentifier.getPath() + "_flowing");
 
-		// If they're not already present, add the sprites to the block atlas.
-
-		ClientSpriteRegistryCallback.event(SpriteAtlasTexture.BLOCK_ATLAS_TEXTURE).register((atlasTexture, registry) -> {
-			registry.register(stillSpriteId);
-			registry.register(flowingSpriteId);
-		});
-
-		final Identifier fluidId = Registry.FLUID.getId(stillFluid);
-		final Identifier listenerId = new Identifier(fluidId.getNamespace(), fluidId.getPath() + "_reload_listener");
+        final var fluidId = Registries.FLUID.getId(stillFluid);
+		final var listenerId = new Identifier(fluidId.getNamespace(), fluidId.getPath() + "_reload_listener");
 
 		final Sprite[] fluidSprites = { null, null };
 
-		ResourceManagerHelper.get(ResourceType.CLIENT_RESOURCES)
-				.registerReloadListener(new SimpleSynchronousResourceReloadListener() {
-					@Override
-					public Identifier getFabricId() {
-						return listenerId;
-					}
+        ResourceManagerHelper.get(ResourceType.CLIENT_RESOURCES)
+            .registerReloadListener(new SimpleSynchronousResourceReloadListener() {
 
-					/**
-					 * Get the sprites from the block atlas when resources are reloaded
-					 */
-					@Override
-					public void apply(final ResourceManager resourceManager) {
-						final Function<Identifier, Sprite> atlas = MinecraftClient.getInstance()
-								.getSpriteAtlas(SpriteAtlasTexture.BLOCK_ATLAS_TEXTURE);
+                @Override
+                public Identifier getFabricId() {
+                    return listenerId;
+                }
 
-						fluidSprites[0] = atlas.apply(stillSpriteId);
-						fluidSprites[1] = atlas.apply(flowingSpriteId);
-					}
-				});
+                @Override
+                public void reload(ResourceManager manager) {
+                    var atlas = MinecraftClient.getInstance().getSpriteAtlas(PlayerScreenHandler.BLOCK_ATLAS_TEXTURE);
 
-		// The FluidRenderer gets the sprites and color from a FluidRenderHandler during
-		// rendering
+                    fluidSprites[0] = atlas.apply(stillSpriteId);
+                    fluidSprites[1] = atlas.apply(flowingSpriteId);
+                }
+
+                @Override
+                public Collection<Identifier> getFabricDependencies() {
+                    return List.of(ResourceReloadListenerKeys.TEXTURES);
+                }
+            });
+
 		final FluidRenderHandler renderHandler = new FluidRenderHandler() {
 			@Override
 			public Sprite[] getFluidSprites(final BlockRenderView view, final BlockPos pos, final FluidState state) {
@@ -78,9 +74,7 @@ public class FluidUtils {
 			}
 		};
 
-		FluidRenderHandlerRegistry.INSTANCE.register(stillFluid, renderHandler);
-		FluidRenderHandlerRegistry.INSTANCE.register(flowingFluid, renderHandler);
-
+        FluidRenderHandlerRegistry.INSTANCE.register(stillFluid, flowingFluid, renderHandler);
 		BlockRenderLayerMap.INSTANCE.putFluids(RenderLayer.getTranslucent(), stillFluid, flowingFluid);
 	}
 }
